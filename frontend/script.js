@@ -1,4 +1,4 @@
-const API_BASE = "https://photo-share-backend-g71f.onrender.com";
+const API_BASE = "https://photoshare-ew4g.onrender.com";
 
 // Show creator upload view
 function showCreator() {
