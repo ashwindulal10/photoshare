@@ -1,28 +1,37 @@
-const API_BASE = "https://photoshare-ew4g.onrender.com";
+// --------------------------------------------------
+// CONFIG
+// --------------------------------------------------
+const API_BASE = "https://photoshare-ew4g.onrender.com"; 
+// ← your actual backend base URL on Render
 
-// Show creator upload view
+// --------------------------------------------------
+// VIEW SWITCHING
+// --------------------------------------------------
 function showCreator() {
     document.getElementById("creator").classList.remove("hidden");
     document.getElementById("consumer").classList.add("hidden");
 }
 
-// Show consumer feed view
 function showConsumer() {
     document.getElementById("consumer").classList.remove("hidden");
     document.getElementById("creator").classList.add("hidden");
     loadFeed();
 }
 
-// Upload photo (matches backend: POST /api/upload)
+// --------------------------------------------------
+// UPLOAD PHOTO
+// matches: POST /api/upload
+// --------------------------------------------------
 async function uploadPhoto() {
     const file = document.getElementById("fileInput").files[0];
+
     if (!file) {
         alert("Select an image first!");
         return;
     }
 
     const formData = new FormData();
-    formData.append("file", file); // backend expects 'file' not 'image'
+    formData.append("file", file); // backend expects 'file'
 
     const res = await fetch(`${API_BASE}/api/upload`, {
         method: "POST",
@@ -31,10 +40,13 @@ async function uploadPhoto() {
 
     const data = await res.json();
     document.getElementById("uploadStatus").innerText =
-        data.message || "Uploaded successfully!";
+        data.error ? `Error: ${data.error}` : "Uploaded successfully!";
 }
 
-// Load feed (matches backend: GET /api/images)
+// --------------------------------------------------
+// LOAD FEED
+// matches: GET /api/images
+// --------------------------------------------------
 async function loadFeed() {
     const res = await fetch(`${API_BASE}/api/images`);
     const photos = await res.json();
@@ -48,29 +60,47 @@ async function loadFeed() {
 
         div.innerHTML = `
             <img src="${API_BASE}/uploads/${photo.filename}">
-            <button class="btn" onclick="likePhoto('${photo.id}')">❤️ Like (${photo.likes})</button>
+            <button class="btn" onclick="likePhoto('${photo.id}')">
+                ❤️ Like (${photo.likes})
+            </button>
+
             <p>Comments:</p>
-            ${photo.comments.map(c => `<p>• ${c.text}</p>`).join("")}
+            ${
+                photo.comments
+                    .map(c => `<p>• ${c.text}</p>`)
+                    .join("")
+            }
+
             <input id="c${photo.id}" placeholder="Write comment...">
-            <button class="btn" onclick="commentPhoto('${photo.id}')">Comment</button>
+            <button class="btn" onclick="commentPhoto('${photo.id}')">
+                Comment
+            </button>
         `;
 
         feed.appendChild(div);
     });
 }
 
-// Like photo (matches backend: POST /api/images/:id/like)
+// --------------------------------------------------
+// LIKE PHOTO
+// matches: POST /api/images/:id/like
+// --------------------------------------------------
 async function likePhoto(id) {
     await fetch(`${API_BASE}/api/images/${id}/like`, {
         method: "POST"
     });
+
     loadFeed();
 }
 
-// Comment photo (matches backend: POST /api/images/:id/comments)
+// --------------------------------------------------
+// COMMENT PHOTO
+// matches: POST /api/images/:id/comments
+// --------------------------------------------------
 async function commentPhoto(id) {
     const input = document.getElementById("c" + id);
     const text = input.value.trim();
+
     if (!text) return;
 
     await fetch(`${API_BASE}/api/images/${id}/comments`, {

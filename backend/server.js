@@ -1,6 +1,7 @@
 // Simple Express backend for PhotoShare (demo)
 // Stores uploaded files to ./uploads and metadata to db.json
 // Usage: npm install && node server.js
+
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
@@ -24,8 +25,7 @@ app.use('/uploads', express.static(UPLOAD_DIR));
 // helper: read/write database (very simple JSON store)
 function readDB() {
   try {
-    const raw = fs.readFileSync(DB_FILE, 'utf8');
-    return JSON.parse(raw || '[]');
+    return JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
   } catch (e) {
     return [];
   }
@@ -36,10 +36,8 @@ function writeDB(data) {
 
 // multer setup
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: function (req, file, cb) {
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
     const id = shortid.generate();
     const ext = path.extname(file.originalname) || '';
     cb(null, id + ext);
@@ -47,11 +45,13 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// POST /api/upload  -> creator uploads an image with fields title, caption
+// POST /api/upload
 app.post('/api/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
   const db = readDB();
   const id = path.parse(req.file.filename).name;
+
   const item = {
     id,
     filename: req.file.filename,
@@ -62,18 +62,18 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     comments: [],
     likes: 0
   };
-  db.unshift(item); // newest first
+
+  db.unshift(item);
   writeDB(db);
   res.json(item);
 });
 
-// GET /api/images  -> list images
+// GET /api/images
 app.get('/api/images', (req, res) => {
-  const db = readDB();
-  res.json(db);
+  res.json(readDB());
 });
 
-// GET /api/images/:id -> single image + comments
+// GET /api/images/:id
 app.get('/api/images/:id', (req, res) => {
   const db = readDB();
   const item = db.find(i => i.id === req.params.id);
@@ -81,27 +81,36 @@ app.get('/api/images/:id', (req, res) => {
   res.json(item);
 });
 
-// POST /api/images/:id/comments  -> add comment { author, text }
+// POST /api/images/:id/comments
 app.post('/api/images/:id/comments', (req, res) => {
   const { author = 'Anonymous', text } = req.body || {};
   if (!text || text.trim() === '') return res.status(400).json({ error: 'Empty comment' });
+
   const db = readDB();
-  const itemIndex = db.findIndex(i => i.id === req.params.id);
-  if (itemIndex === -1) return res.status(404).json({ error: 'Not found' });
-  const comment = { id: shortid.generate(), author, text, createdAt: new Date().toISOString() };
-  db[itemIndex].comments.push(comment);
+  const index = db.findIndex(i => i.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Not found' });
+
+  const comment = {
+    id: shortid.generate(),
+    author,
+    text,
+    createdAt: new Date().toISOString()
+  };
+
+  db[index].comments.push(comment);
   writeDB(db);
   res.json(comment);
 });
 
-// POST /api/images/:id/like -> increment likes
+// POST /api/images/:id/like
 app.post('/api/images/:id/like', (req, res) => {
   const db = readDB();
-  const itemIndex = db.findIndex(i => i.id === req.params.id);
-  if (itemIndex === -1) return res.status(404).json({ error: 'Not found' });
-  db[itemIndex].likes = (db[itemIndex].likes || 0) + 1;
+  const index = db.findIndex(i => i.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Not found' });
+
+  db[index].likes++;
   writeDB(db);
-  res.json({ likes: db[itemIndex].likes });
+  res.json({ likes: db[index].likes });
 });
 
 // health
