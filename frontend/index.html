@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Photo Share App</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
+        .btn { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .hidden { display: none; }
+        img { width: 100%; border-radius: 10px; margin-top: 10px; }
+        .card { border: 1px solid #ddd; padding: 10px; border-radius: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>📸 Photo Share App</h1>
+
+    <button class="btn" onclick="showCreator()">Creator View</button>
+    <button class="btn" onclick="showConsumer()">Consumer Feed</button>
+
+    <!-- Creator Upload Section -->
+    <div id="creator" class="hidden">
+        <h2>Creator Upload</h2>
+        <input type="file" id="fileInput"><br><br>
+        <button class="btn" onclick="uploadPhoto()">Upload Photo</button>
+        <p id="uploadStatus"></p>
+    </div>
+
+    <!-- Consumer Feed Section -->
+    <div id="consumer" class="hidden">
+        <h2>Consumer Feed</h2>
+        <div id="feed"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
