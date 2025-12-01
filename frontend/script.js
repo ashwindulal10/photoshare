@@ -13,7 +13,7 @@ function showConsumer() {
     loadFeed();
 }
 
-// Upload photo
+// Upload photo (matches backend: POST /api/upload)
 async function uploadPhoto() {
     const file = document.getElementById("fileInput").files[0];
     if (!file) {
@@ -22,77 +22,63 @@ async function uploadPhoto() {
     }
 
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("file", file); // backend expects 'file' not 'image'
 
-    try {
-        const res = await fetch(`${API_BASE}/upload`, {
-            method: "POST",
-            body: formData
-        });
+    const res = await fetch(`${API_BASE}/api/upload`, {
+        method: "POST",
+        body: formData
+    });
 
-        const data = await res.json();
-        document.getElementById("uploadStatus").innerText = data.message || "Uploaded!";
-    } catch (err) {
-        document.getElementById("uploadStatus").innerText = "Upload failed!";
-        console.error(err);
-    }
+    const data = await res.json();
+    document.getElementById("uploadStatus").innerText =
+        data.message || "Uploaded successfully!";
 }
 
-// Load feed
+// Load feed (matches backend: GET /api/images)
 async function loadFeed() {
-    try {
-        const res = await fetch(`${API_BASE}/photos`);
-        const photos = await res.json();
+    const res = await fetch(`${API_BASE}/api/images`);
+    const photos = await res.json();
 
-        const feed = document.getElementById("feed");
-        feed.innerHTML = "";
+    const feed = document.getElementById("feed");
+    feed.innerHTML = "";
 
-        photos.forEach(photo => {
-            const div = document.createElement("div");
-            div.className = "card";
+    photos.forEach(photo => {
+        const div = document.createElement("div");
+        div.className = "card";
 
-            div.innerHTML = `
-                <img src="${API_BASE}/uploads/${photo.filename}">
-                <button class="btn" onclick="likePhoto('${photo.id}')">❤️ Like (${photo.likes})</button>
-                <p>Comments:</p>
-                ${photo.comments.map(c => `<p>• ${c}</p>`).join("")}
-                <input id="c${photo.id}" placeholder="Write comment...">
-                <button class="btn" onclick="commentPhoto('${photo.id}')">Comment</button>
-            `;
+        div.innerHTML = `
+            <img src="${API_BASE}/uploads/${photo.filename}">
+            <button class="btn" onclick="likePhoto('${photo.id}')">❤️ Like (${photo.likes})</button>
+            <p>Comments:</p>
+            ${photo.comments.map(c => `<p>• ${c.text}</p>`).join("")}
+            <input id="c${photo.id}" placeholder="Write comment...">
+            <button class="btn" onclick="commentPhoto('${photo.id}')">Comment</button>
+        `;
 
-            feed.appendChild(div);
-        });
-    } catch (err) {
-        console.error("Error loading feed:", err);
-    }
+        feed.appendChild(div);
+    });
 }
 
-// Like photo
+// Like photo (matches backend: POST /api/images/:id/like)
 async function likePhoto(id) {
-    try {
-        await fetch(`${API_BASE}/like/${id}`, { method: "POST" });
-        loadFeed();
-    } catch (err) {
-        console.error(err);
-    }
+    await fetch(`${API_BASE}/api/images/${id}/like`, {
+        method: "POST"
+    });
+    loadFeed();
 }
 
-// Comment photo
+// Comment photo (matches backend: POST /api/images/:id/comments)
 async function commentPhoto(id) {
     const input = document.getElementById("c" + id);
     const text = input.value.trim();
     if (!text) return;
 
-    try {
-        await fetch(`${API_BASE}/comment/${id}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text })
-        });
+    await fetch(`${API_BASE}/api/images/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+    });
 
-        input.value = "";
-        loadFeed();
-    } catch (err) {
-        console.error(err);
-    }
+    input.value = "";
+    loadFeed();
 }
