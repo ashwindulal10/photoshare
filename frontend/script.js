@@ -24,44 +24,57 @@ async function uploadPhoto() {
     const formData = new FormData();
     formData.append("image", file);
 
-    const res = await fetch(`${API_BASE}/upload`, {
-        method: "POST",
-        body: formData
-    });
+    try {
+        const res = await fetch(`${API_BASE}/upload`, {
+            method: "POST",
+            body: formData
+        });
 
-    const data = await res.json();
-    document.getElementById("uploadStatus").innerText = data.message || "Uploaded!";
+        const data = await res.json();
+        document.getElementById("uploadStatus").innerText = data.message || "Uploaded!";
+    } catch (err) {
+        document.getElementById("uploadStatus").innerText = "Upload failed!";
+        console.error(err);
+    }
 }
 
 // Load feed
 async function loadFeed() {
-    const res = await fetch(`${API_BASE}/photos`);
-    const photos = await res.json();
+    try {
+        const res = await fetch(`${API_BASE}/photos`);
+        const photos = await res.json();
 
-    const feed = document.getElementById("feed");
-    feed.innerHTML = "";
+        const feed = document.getElementById("feed");
+        feed.innerHTML = "";
 
-    photos.forEach(photo => {
-        const div = document.createElement("div");
-        div.className = "card";
+        photos.forEach(photo => {
+            const div = document.createElement("div");
+            div.className = "card";
 
-        div.innerHTML = `
-            <img src="${API_BASE}/uploads/${photo.filename}">
-            <button class="btn" onclick="likePhoto('${photo.id}')">❤️ Like (${photo.likes})</button>
-            <p>Comments:</p>
-            ${photo.comments.map(c => `<p>• ${c}</p>`).join("")}
-            <input id="c${photo.id}" placeholder="Write comment...">
-            <button class="btn" onclick="commentPhoto('${photo.id}')">Comment</button>
-        `;
+            div.innerHTML = `
+                <img src="${API_BASE}/uploads/${photo.filename}">
+                <button class="btn" onclick="likePhoto('${photo.id}')">❤️ Like (${photo.likes})</button>
+                <p>Comments:</p>
+                ${photo.comments.map(c => `<p>• ${c}</p>`).join("")}
+                <input id="c${photo.id}" placeholder="Write comment...">
+                <button class="btn" onclick="commentPhoto('${photo.id}')">Comment</button>
+            `;
 
-        feed.appendChild(div);
-    });
+            feed.appendChild(div);
+        });
+    } catch (err) {
+        console.error("Error loading feed:", err);
+    }
 }
 
 // Like photo
 async function likePhoto(id) {
-    await fetch(`${API_BASE}/like/${id}`, { method: "POST" });
-    loadFeed();
+    try {
+        await fetch(`${API_BASE}/like/${id}`, { method: "POST" });
+        loadFeed();
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 // Comment photo
@@ -70,12 +83,16 @@ async function commentPhoto(id) {
     const text = input.value.trim();
     if (!text) return;
 
-    await fetch(`${API_BASE}/comment/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-    });
+    try {
+        await fetch(`${API_BASE}/comment/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text })
+        });
 
-    input.value = "";
-    loadFeed();
+        input.value = "";
+        loadFeed();
+    } catch (err) {
+        console.error(err);
+    }
 }
